@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   linkedin_url TEXT,
   personal_website TEXT,
   current_company TEXT,
-  current_role TEXT,
+  current_position TEXT,
   profile_image TEXT,
   open_to_coffee_chats BOOLEAN DEFAULT false NOT NULL,
   open_to_mentorship BOOLEAN DEFAULT false NOT NULL,
@@ -104,18 +104,3 @@ CREATE POLICY "Admins can update all profiles"
       WHERE id = auth.uid() AND is_admin = true
     )
   );
-
--- Function to handle profile updates
-CREATE OR REPLACE FUNCTION handle_profile_update()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger for profile updates
-CREATE TRIGGER on_profile_update
-  BEFORE UPDATE ON profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION handle_profile_update();
