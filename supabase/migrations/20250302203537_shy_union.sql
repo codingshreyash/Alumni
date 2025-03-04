@@ -13,7 +13,7 @@
 
 -- Sample alumni profiles
 INSERT INTO profiles (id, email, full_name, location, majors, internships, interviews_passed, graduation_year, 
-                     linkedin_url, personal_website, current_company, current_role, profile_image,
+                     linkedin_url, personal_website, current_company, current_position, profile_image,
                      open_to_coffee_chats, open_to_mentorship, available_for_referrals, 
                      additional_notes, is_alumni, is_admin, profile_completed, profile_visible)
 VALUES
