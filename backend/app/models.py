@@ -4,54 +4,67 @@ import uuid
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-
+from datetime import datetime, timezone
+from typing import List, Optional
 
 # Shared properties
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
-
+    full_name: Optional[str] = Field(default=None, max_length=255)
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=40)
 
-
 class UserRegister(SQLModel):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=40)
-    full_name: str | None = Field(default=None, max_length=255)
-
+    full_name: Optional[str] = Field(default=None, max_length=255)
 
 # Properties to receive via API on update, all are optional
 class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
-    password: str | None = Field(default=None, min_length=8, max_length=40)
-
+    email: Optional[EmailStr] = Field(default=None, max_length=255)  # type: ignore
+    password: Optional[str] = Field(default=None, min_length=8, max_length=40)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserUpdateMe(SQLModel):
-    full_name: str | None = Field(default=None, max_length=255)
-    email: EmailStr | None = Field(default=None, max_length=255)
-
+    full_name: Optional[str] = Field(default=None, max_length=255)
+    email: Optional[EmailStr] = Field(default=None, max_length=255)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UpdatePassword(SQLModel):
     current_password: str = Field(min_length=8, max_length=40)
     new_password: str = Field(min_length=8, max_length=40)
-
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
-
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    location: Optional[str] = None
+    graduation_year: Optional[int] = None
+    linkedin_url: Optional[str] = None
+    personal_website: Optional[str] = None
+    current_company: Optional[str] = None
+    current_role: Optional[str] = None
+    profile_image: Optional[str] = None
+    open_to_coffee_chats: bool = False
+    open_to_mentorship: bool = False
+    available_for_referrals: bool = False
+    additional_notes: Optional[str] = None
+    is_alumni: bool = False
+    is_admin: bool = False
+    profile_completed: bool = False
+    profile_visible: bool = False
+    items: list["Item"] = Relationship(back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete"})
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
-
 
 class UsersPublic(SQLModel):
     data: list[UserPublic]
