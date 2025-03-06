@@ -26,13 +26,14 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get(
     "/",
-    # dependencies=[Depends(get_current_active_superuser)], # login check
+    dependencies=[Depends(get_current_active_superuser)], # login check
     response_model=UsersPublic
 )
 def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     """
     retrieve users
     """
+    # print("read")
 
     count_statement = select(func.count()).select_from(User)
     count = session.exec(count_statement).one()
@@ -45,8 +46,7 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
 @router.post(
     "/",
-    #   dependencies=[Depends(get_current_active_superuser)],
-        response_model=UserPublic
+    response_model=UserPublic
 )
 def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
