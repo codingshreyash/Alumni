@@ -27,11 +27,35 @@ class UserRegister(SQLModel):
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(default=None, max_length=255)  # type: ignore
     password: Optional[str] = Field(default=None, min_length=8, max_length=40)
+    graduation_year: Optional[int] = None
+    linkedin_url: Optional[str] = None
+    personal_website: Optional[str] = None
+    current_company: Optional[str] = None
+    current_role: Optional[str] = None
+    profile_image: Optional[str] = None
+    open_to_coffee_chats: bool = False
+    open_to_mentorship: bool = False
+    available_for_referrals: bool = False
+    bio: Optional[str] = None
+    is_alumni: Optional[bool] = False
+    is_admin: Optional[bool] = False
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# TODO: Add more fields when updating profile
 class UserUpdateMe(SQLModel):
     full_name: Optional[str] = Field(default=None, max_length=255)
     email: Optional[EmailStr] = Field(default=None, max_length=255)
+    graduation_year: Optional[int] = None
+    linkedin_url: Optional[str] = None
+    personal_website: Optional[str] = None
+    current_company: Optional[str] = None
+    current_role: Optional[str] = None
+    profile_image: Optional[str] = None
+    open_to_coffee_chats: bool = False
+    open_to_mentorship: bool = False
+    available_for_referrals: bool = False
+    bio: Optional[str] = None
+    is_alumni: Optional[bool] = False
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UpdatePassword(SQLModel):
@@ -55,7 +79,7 @@ class User(UserBase, table=True):
     open_to_coffee_chats: bool = False
     open_to_mentorship: bool = False
     available_for_referrals: bool = False
-    additional_notes: Optional[str] = None
+    bio: Optional[str] = None
     is_alumni: bool = False
     is_admin: bool = False
     profile_completed: bool = False

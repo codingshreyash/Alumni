@@ -1,5 +1,7 @@
 import secrets
 import warnings
+import os
+from dotenv import load_dotenv
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -22,6 +24,7 @@ def parse_cors(v: Any) -> list[str] | str:
         return v
     raise ValueError(v)
 
+load_dotenv()
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -63,7 +66,7 @@ class Settings(BaseSettings):
     SMTP_HOST: str | None = None
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
-    EMAILS_FROM_EMAIL: EmailStr | None = None
+    EMAILS_FROM_EMAIL: EmailStr | None = os.getenv('EMAILS_FROM_EMAIL')
     EMAILS_FROM_NAME: EmailStr | None = None
 
     @model_validator(mode="after")
@@ -80,8 +83,9 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
-    FIRST_SUPERUSER: EmailStr = "admin@example.com"
-    FIRST_SUPERUSER_PASSWORD: str = "changethis"
+    FIRST_SUPERUSER: EmailStr = os.getenv('FIRST_SUPERUSER')
+    FIRST_SUPERUSER_PASSWORD: str = os.getenv('FIRST_SUPERUSER_PASSWORD')
+    FIRST_SUPERUSER_NAME: str = os.getenv('FIRST_SUPERUSER_NAME')
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
