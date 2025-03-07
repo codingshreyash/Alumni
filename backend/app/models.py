@@ -93,6 +93,16 @@ class UsersPublic(SQLModel):
     data: list[UserPublic]
     count: int
 
+class EmailBase(SQLModel):
+    email: EmailStr = Field(primary_key=True)
+    preferred: bool = False
+
+class Email(EmailBase, table=True):
+    user_id: int = Field(foreign_key="user.id", nullable=False)
+
+class EmailsPublic(SQLModel):
+    data: List[EmailBase]
+    count: int
 
 # # Shared properties
 # class ItemBase(SQLModel):
