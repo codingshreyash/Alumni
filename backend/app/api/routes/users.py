@@ -19,7 +19,10 @@ from app.models import (
     UserRegister,
     UserUpdate,
     UserUpdateMe,
-    UpdatePassword
+    UpdatePassword,
+    EmailBase,
+    EmailsPublic,
+    Email
 )
 from app.utils import generate_new_account_email, send_email
 
@@ -71,6 +74,11 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
+    # add email to the email database
+    new_email = Email(email=user_in.email, user_id=user_in.id, preferred=True)
+    session.add(new_email)
+    session.commit()
+    session.refresh(new_email)
     return user
 
 @router.patch("/me", response_model=UserPublic)
@@ -150,6 +158,12 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
+
+        # add email to the email database
+    new_email = Email(email=user_in.email, user_id=user_in.id, preferred=True)
+    session.add(new_email)
+    session.commit()
+    session.refresh(new_email)
     return user
 
 
