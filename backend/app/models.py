@@ -25,8 +25,8 @@ class UserRegister(SQLModel):
 
 # Properties to receive via API on update, all are optional
 class UserUpdate(UserBase):
+    full_name: Optional[str] = Field(default=None, max_length=255)
     email: Optional[EmailStr] = Field(default=None, max_length=255)  # type: ignore
-    password: Optional[str] = Field(default=None, min_length=8, max_length=40)
     graduation_year: Optional[int] = None
     linkedin_url: Optional[str] = None
     personal_website: Optional[str] = None
@@ -38,10 +38,8 @@ class UserUpdate(UserBase):
     available_for_referrals: bool = False
     bio: Optional[str] = None
     is_alumni: Optional[bool] = False
-    is_admin: Optional[bool] = False
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-# TODO: Add more fields when updating profile
 class UserUpdateMe(SQLModel):
     full_name: Optional[str] = Field(default=None, max_length=255)
     email: Optional[EmailStr] = Field(default=None, max_length=255)
@@ -63,7 +61,7 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=40)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-# Database model, database table inferred from class name
+# Database model
 class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True) # auto increments because sqlalchemy is dumb
     hashed_password: str
@@ -81,13 +79,26 @@ class User(UserBase, table=True):
     available_for_referrals: bool = False
     bio: Optional[str] = None
     is_alumni: bool = False
-    is_admin: bool = False
     profile_completed: bool = False
-    profile_visible: bool = False
+    profile_visible: bool = True
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: int | None = Field(default=None, primary_key=True)
+    location: Optional[str]
+    graduation_year: Optional[int]
+    linkedin_url: Optional[str]
+    personal_website: Optional[str]
+    current_company: Optional[str] 
+    current_role: Optional[str]
+    profile_image: Optional[str]
+    open_to_coffee_chats: Optional[bool]
+    open_to_mentorship: Optional[bool]
+    available_for_referrals: Optional[bool]
+    bio: Optional[str]
+    is_alumni: Optional[bool]
+    is_admin: Optional[bool]
+    profile_visible: Optional[bool]
 
 class UsersPublic(SQLModel):
     data: list[UserPublic]
@@ -103,6 +114,17 @@ class Email(EmailBase, table=True):
 class EmailsPublic(SQLModel):
     data: List[EmailBase]
     count: int
+
+# TODO: COMPANIES
+class Company(SQLModel, table=True):
+    name: str = Field(unique=True, primary_key=True)
+
+# TODO: PAST INTERNSHIPS
+# class Internship(SQLModel, table=True):
+
+# TODO: INTERVIEWS
+# TODO: PAST FULL TIME
+
 
 # # Shared properties
 # class ItemBase(SQLModel):
