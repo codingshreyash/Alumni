@@ -30,10 +30,9 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get(
     "/",
-    # dependencies=[Depends(get_current_active_superuser)], # login check
     response_model=UsersPublic
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
     retrieve users
     """
@@ -42,7 +41,8 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     count_statement = select(func.count()).select_from(User)
     count = session.exec(count_statement).one()
 
-    statement = select(User).offset(skip).limit(limit)
+    statement = select(User).where(
+        User.profile_visible == True, User.id != current_user.id).offset(skip).limit(limit)
     users = session.exec(statement).all()
 
     return UsersPublic(data=users, count=count)
@@ -159,8 +159,8 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
 
-        # add email to the email database
-    new_email = Email(email=user_in.email, user_id=user_in.id, preferred=True)
+    # add email to the email database
+    new_email = Email(email=user.email, user_id=user.id, preferred=True)
     session.add(new_email)
     session.commit()
     session.refresh(new_email)
