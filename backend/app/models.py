@@ -165,7 +165,7 @@ class ConnectionRequests(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     requester_id: int = Field(foreign_key="user.id", nullable=False)
     requested_id: int = Field(foreign_key="user.id", nullable=False)
-    status: str # check constraint: 'pending', 'accepted', 'declined'
+    status: str # check constraint: 'pending', 'accepted', 'declined'(?)
     message: str | None
 
 # EVENTS
