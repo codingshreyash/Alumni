@@ -97,7 +97,6 @@ class UserPublic(UserBase):
     available_for_referrals: Optional[bool]
     bio: Optional[str]
     is_alumni: Optional[bool]
-    is_admin: Optional[bool]
     profile_visible: Optional[bool]
 
 class UsersPublic(SQLModel):
@@ -115,52 +114,69 @@ class EmailsPublic(SQLModel):
     data: List[EmailBase]
     count: int
 
-# TODO: COMPANIES
+# COMPANIES
 class Company(SQLModel, table=True):
+    # company lookup: https://api.orb-intelligence.com/docs/
+    # don't know if its down
     name: str = Field(unique=True, primary_key=True)
+    # company logos: https://clearbit.com/docs#logo-api
+    image_url: Optional[str] = None
 
-# TODO: PAST INTERNSHIPS
-# class Internship(SQLModel, table=True):
+class CompaniesPublic(SQLModel):
+    data: list[Company]
+    count: int
 
-# TODO: INTERVIEWS
-# TODO: PAST FULL TIME
+# INTERNSHIPS
+class Internship(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    company_name: str = Field(foreign_key="company.name", primary_key=True)
+    season: datetime = None
+    length: int = 10 # Weeks
 
+class InternshipsPublic(SQLModel):
+    data: list[Internship]
+    count: int
 
-# # Shared properties
-# class ItemBase(SQLModel):
-#     title: str = Field(min_length=1, max_length=255)
-#     description: str | None = Field(default=None, max_length=255)
+# INTERVIEWS
+class Interview(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True) # order is implicit as id is sorted
+    user_id: int = Field(foreign_key="user.id", nullable=False)
+    company_name: str = Field(foreign_key="company.name", nullable=False)
+    role: str
+    internship: bool
+    season: datetime # someone can interview with same company and role so need the season
+    passed: bool = True
+    note: Optional[str]
+    date: Optional[datetime]
+class InterviewsPublic(SQLModel):
+    data: list[Interview]
+    count: int
 
+# FULL TIME
+class Jobs(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    company_name: str = Field(foreign_key="company.name", primary_key=True)
+    start: datetime
+    end: datetime
 
-# # Properties to receive on item creation
-# class ItemCreate(ItemBase):
-#     pass
+# CONNECTION REQUESTS
+class ConnectionRequests(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    requester_id: int = Field(foreign_key="user.id", nullable=False)
+    requested_id: int = Field(foreign_key="user.id", nullable=False)
+    status: str # check constraint: 'pending', 'accepted', 'declined'
+    message: str | None
 
-
-# # Properties to receive on item update
-# class ItemUpdate(ItemBase):
-#     title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
-
-
-# # Database model, database table inferred from class name
-# class Item(ItemBase, table=True):
-#     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-#     title: str = Field(max_length=255)
-#     owner_id: uuid.UUID = Field(
-#         foreign_key="user.id", nullable=False, ondelete="CASCADE"
-#     )
-#     owner: User | None = Relationship(back_populates="items")
-
-
-# # Properties to return via API, id is always required
-# class ItemPublic(ItemBase):
-#     id: uuid.UUID
-#     owner_id: uuid.UUID
-
-
-# class ItemsPublic(SQLModel):
-#     data: list[ItemPublic]
-#     count: int
+# EVENTS
+class Event(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    title: str = Field(max_length=255)
+    description: str
+    date: datetime
+    location: str
+    image_url: Optional[str] = None
 
 
 # # Generic message

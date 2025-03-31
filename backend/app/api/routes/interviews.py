@@ -1,55 +1,100 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from pydantic import ValidationError
+from typing import Any
+from sqlmodel import func, select
 
-router = APIRouter(tags="companies")
+from app.api.deps import CurrentUser, SessionDep
+from app.models import Interview, InterviewsPublic
 
-# from pydantic import BaseModel
-# class Interview(BaseModel):
-#     company: str
-#     pittId: str
-#     date: str
-#     role: str
+router = APIRouter(prefix="/interviews", tags=["interviews"])
+
+@router.get("/", response_model=InterviewsPublic)
+def read_interviews(
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+):
+    """
+    retrieves ALL interviews
+    """
+    count_statement = (
+            select(func.count())
+            .select_from(Interview)
+        )
+    count = session.exec(count_statement).one()
+
+    statement = select(Interview).select_from(Interview)
+    companies = session.exec(statement).all()
+    
+    return InterviewsPublic(data=companies, count=count)
 
 
+# @router.get("/{name}", response_model=Company)
+# def read_company(
+#     name: str, session: SessionDep, current_user: CurrentUser
+# ):
+#     """
+#     retrieves company
+#     """
+#     db_company = session.get(Company, name)
+#     if not db_company:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="The company with this name does not exist in the system",
+#         )
+#     return db_company
 
 
-# Interviews
-# @router.get("/interviews")
-# def get_interviews():
-#     pass
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
-    # cursor.execute("SELECT * FROM interviews")
-    # items = [dict(row) for row in cursor.fetchall()]
-    # conn.close()
-    # return items
+@router.post("/", response_model=Interview)
+def create_interview(
+    *, session: SessionDep, interview_in: Interview
+) -> Any:
+    """
+    Create new company.
+    """
 
-# @router.post("/interviews")
-# def create_interview():
-#     pass
-    # # create company if it does not exist in the database
-    # # needs to come before interview to satisfy foreign key
-    # if not get_company(interview.company):
-    #     create_company(Company(name=interview.company))
+    # try catch ValidationError??
+    try:
+        interview = Interview.model_validate(interview_in)
+    except ValidationError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Validation error for interview data: {e.errors()}"
+            )
 
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
 
-    # # dates are stored in 'YYYY-MM-DD' format
-    # date_object = datetime.datetime.strptime(interview.date, '%Y-%m-%d')
-    # interview.date = date_object.strftime('%Y-%m-%d')
+    session.add(interview)
+    session.commit()
+    session.refresh(interview)
+    return interview
 
-    # # values should sanitize input
-    # cursor.execute(
-    #     "INSERT INTO interviews (company, pittId, date, role) VALUES (?, ?, ?, ?)", 
-    #     (interview.company, interview.pittId, interview.date, interview.role)
-    # )
-    # conn.commit()
-    # conn.close()
+@router.post("/bulk", response_model=InterviewsPublic)
+def create_interviews(
+    *, session: SessionDep, interviews_in: InterviewsPublic
+) -> Any:
+    """
+    Create multiple interviews from a list
+    """
+    interviews = []
+    for interview_data in interviews_in.data:
+        try:
+            interview = Interview.model_validate(interview_data)
+            session.add(interview)
+            interviews.append(interview)
+        except ValidationError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Validation error for interview data: {e.errors()}"
+            )
 
-    # return {
-    #     "company": interview.company,
-    #     "pittId": interview.pittId,
-    #     "date": interview.date,
-    #     "role": interview.role,
-    # }
 
+    session.commit()
+
+    for interview in interviews:
+        session.refresh(interview)
+
+    count_statement = (
+        select(func.count())
+        .select_from(Interview)
+    )
+    count = session.exec(count_statement).one()
+
+    return InterviewsPublic(data=interviews, count=count)
