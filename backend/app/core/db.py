@@ -1,4 +1,4 @@
-from sqlmodel import Session, create_engine, SQLModel, select
+from sqlmodel import Session, create_engine, SQLModel, select, text
 
 from app import crud
 from app.core.config import settings
@@ -14,6 +14,8 @@ def init_db(session: Session) -> None:
 
     # This works because the models are already imported and registered from app.models
     SQLModel.metadata.create_all(engine)
+    with engine.connect() as connection:
+        connection.execute(text("PRAGMA foreign_keys=ON"))
 
     user = session.exec(
         select(User).where(User.email == settings.FIRST_SUPERUSER)

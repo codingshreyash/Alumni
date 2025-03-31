@@ -38,7 +38,7 @@ def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, li
     """
     # print("read")
 
-    count_statement = select(func.count()).select_from(User)
+    count_statement = select(func.count()).select_from(User).where(User.id != current_user.id)
     count = session.exec(count_statement).one()
 
     statement = select(User).where(
@@ -75,7 +75,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             html_content=email_data.html_content,
         )
     # add email to the email database
-    new_email = Email(email=user_in.email, user_id=user_in.id, preferred=True)
+    new_email = Email(email=user_in.email, user_id=user.id, preferred=True)
     session.add(new_email)
     session.commit()
     session.refresh(new_email)
@@ -175,6 +175,11 @@ def read_user_by_id(
     Get a specific user by id.
     """
     user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this id does not exist in the system"
+        )
     if user == current_user:
         return user
     if not current_user.is_superuser:
@@ -234,3 +239,24 @@ def delete_user(
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
+
+
+@router.get("/company/{company_name}")
+def get_users_by_company(
+    company_name: str, current_user: CurrentUser, session: SessionDep, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Get users by company
+    """
+    count_statement = (
+            select(func.count())
+            .select_from(User)
+            .where(User.current_company == company_name, User.id != current_user.id)
+        )
+    count = session.exec(count_statement).one()
+
+    statement = select(User).select_from(User).where(
+        User.current_company == company_name, User.id != current_user.id).offset(skip).limit(limit)
+    users = session.exec(statement).all()
+
+    return UsersPublic(data=users, count=count)
