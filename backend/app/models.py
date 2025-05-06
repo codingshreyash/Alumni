@@ -160,12 +160,16 @@ class Jobs(SQLModel, table=True):
     end: datetime
 
 # CONNECTION REQUESTS
-class ConnectionRequests(SQLModel, table=True):
+class ConnectionRequest(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     requester_id: int = Field(foreign_key="user.id", nullable=False)
     requested_id: int = Field(foreign_key="user.id", nullable=False)
-    status: str # check constraint: 'pending', 'accepted', 'declined'(?)
+    message: str | None
+
+class ConnectionRequestPublic(SQLModel):
+    requester_id: int = Field(foreign_key="user.id", nullable=False)
+    requested_id: int = Field(foreign_key="user.id", nullable=False)
     message: str | None
 
 # EVENTS

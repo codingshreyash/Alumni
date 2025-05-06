@@ -4,4 +4,5 @@
 - [ ] Make database triggers
 - [ ] Consult people
 - [ ] Figure out mjml email templates
-- [ ] Create automated tests
+- [ ] Create automated tests suite
+- [ ] Connect frontend and backend
