@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import companies, interviews, login, private, users, utils, emails
+from app.api.routes import companies, interviews, login, private, users, utils, emails, connections
 from app.core.config import settings
 
 api_router = APIRouter()

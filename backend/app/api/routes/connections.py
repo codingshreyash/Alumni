@@ -4,29 +4,41 @@ from typing import Any
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models import ConnectionRequests
+from app.models import ConnectionRequest, ConnectionRequestPublic
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 
-@router.post("/", response_model=ConnectionRequests)
+@router.post("/", response_model=ConnectionRequest)
 async def create_connection_request(
-    connection_request: ConnectionRequests,
+    request_create: ConnectionRequestPublic,
     session: SessionDep,
     current_user: CurrentUser
 ) -> Any:
-    if connection_request.requester_id != current_user.id:
+    if request_create.requester_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only create requests for yourself.")
-    if connection_request.requester_id == connection_request.requested_id:
+    if request_create.requester_id == request_create.requested_id:
         raise HTTPException(status_code=400, detail="You cannot request a connection with yourself.")
     
-    connection_request.status = "pending"
-    session.add(connection_request)
+    # check if the reverse request already exists
+    # TODO: change behavior to accept request instead
+    statement = select(ConnectionRequest).where(
+        ConnectionRequest.requester_id == request_create.requested_id,
+        ConnectionRequest.requested_id == request_create.requester_id)
+    session_user = session.exec(statement).first()
+    if session_user:
+        raise HTTPException(
+            status_code=400,
+            detail="The user has already requested you",
+        )
+    
+    conn = ConnectionRequest.model_validate(request_create)
+    session.add(conn)
     session.commit()
-    session.refresh(connection_request)
+    session.refresh(conn)
     
     # send email
-    return connection_request
+    return conn
 
 
 
@@ -36,7 +48,7 @@ async def delete_connection_request(
     session: SessionDep,
     current_user: CurrentUser
 ) -> Any:
-    connection_request = session.get(ConnectionRequests, connection_id)
+    connection_request = session.get(ConnectionRequest, connection_id)
     if not connection_request:
         raise HTTPException(status_code=404, detail="Connection request not found.")
     if connection_request.requester_id != current_user.id:
