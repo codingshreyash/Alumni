@@ -97,30 +97,30 @@ async def accept_request(
     if connection_request.requested_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only accept requests for yourself.")
     
-    # Create the completed request
+    # create the completed request
     conn = CompletedRequest(
         requester_id=connection_request.requester_id,
         requested_id=connection_request.requested_id
     )
     session.add(conn)
     
-    # Get requester's information for the acceptance email
+    # get requester's information for the acceptance email
     requester = session.get(User, connection_request.requester_id)
     if not requester:
         raise HTTPException(status_code=404, detail="Requester not found")
     
-    # Get requester's preferred email
+    # get requester's preferred email
     requester_email = session.exec(
         select(Email).where(Email.user_id == requester.id, Email.preferred == True)
     ).first()
     
-    # Get current user's preferred contact info
+    # get current user's preferred contact info
     preferred_email = session.exec(
         select(Email).where(Email.user_id == current_user.id, Email.preferred == True)
     ).first()
     
     if requester_email and settings.emails_enabled:
-        # Send acceptance email to requester
+        # send acceptance email to requester
         email_data = generate_connection_acceptance_email(
             email_to=requester_email.email,
             requester_name=requester.full_name or requester.email,
