@@ -120,6 +120,7 @@ class Company(SQLModel, table=True):
     # don't know if its down
     name: str = Field(unique=True, primary_key=True)
     # company logos: https://clearbit.com/docs#logo-api
+    # logo.dev (use on the frontend tbh)
     image_url: Optional[str] = None
 
 class CompaniesPublic(SQLModel):
@@ -160,17 +161,23 @@ class Jobs(SQLModel, table=True):
     end: datetime
 
 # CONNECTION REQUESTS
-class ConnectionRequest(SQLModel, table=True):
+class Request(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     requester_id: int = Field(foreign_key="user.id", nullable=False)
     requested_id: int = Field(foreign_key="user.id", nullable=False)
     message: str | None
 
-class ConnectionRequestPublic(SQLModel):
+class RequestPublic(SQLModel):
     requester_id: int = Field(foreign_key="user.id", nullable=False)
     requested_id: int = Field(foreign_key="user.id", nullable=False)
     message: str | None
+
+class CompletedRequest(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    requester_id: int = Field(foreign_key="user.id", nullable=False)
+    requested_id: int = Field(foreign_key="user.id", nullable=False)
 
 # EVENTS
 class Event(SQLModel, table=True):

@@ -1,0 +1,53 @@
+<mjml>
+  <mj-body background-color="#fafbfc">
+    <mj-section background-color="#fff" padding="40px 20px">
+      <mj-column vertical-align="middle" width="100%">
+        <mj-text align="center" padding="35px" font-size="20px" font-family="Arial, Helvetica, sans-serif" color="#333">{{ project_name }} - New Connection Request</mj-text>
+        <mj-text align="center" font-size="16px" padding-left="25px" padding-right="25px" font-family="Arial, Helvetica, sans-serif" color="#555"><span>Hello {{ requested_name }}</span></mj-text>
+        <mj-text align="center" font-size="16px" padding-left="25px" padding-right="25px" font-family="Arial, Helvetica, sans-serif" color="#555">{{ requester_name }} has requested to connect with you on {{ project_name }}.</mj-text>
+        
+        {% if message %}
+        <!-- Message Section -->
+        <mj-section background-color="#f0f7ff" border-radius="8px" padding="20px" margin="20px 0">
+          <mj-column>
+            <mj-text align="center" font-size="16px" font-style="italic" color="#333">Message from {{ requester_name }}:</mj-text>
+            <mj-text align="center" font-size="14px" color="#555" line-height="1.5">{{ message }}</mj-text>
+          </mj-column>
+        </mj-section>
+        {% endif %}
+        
+        <!-- Profile Snapshot -->
+        <mj-section background-color="#f8f9fa" border-radius="8px" padding="20px">
+          <mj-column>
+            <mj-text align="center" font-size="18px" font-weight="bold" color="#333">{{ requester_name }}'s Profile</mj-text>
+            {% if requester_title %}
+            <mj-text align="center" font-size="14px" color="#666">{{ requester_title }}</mj-text>
+            {% endif %}
+            {% if requester_company %}
+            <mj-text align="center" font-size="14px" color="#666">{{ requester_company }}</mj-text>
+            {% endif %}
+            {% if requester_location %}
+            <mj-text align="center" font-size="14px" color="#666">{{ requester_location }}</mj-text>
+            {% endif %}
+            {% if requester_graduation_year %}
+            <mj-text align="center" font-size="14px" color="#666">Class of {{ requester_graduation_year }}</mj-text>
+            {% endif %}
+          </mj-column>
+        </mj-section>
+
+        <!-- Action Buttons -->
+        <mj-section padding="20px 0">
+          <mj-column>
+            <mj-button align="center" font-size="16px" background-color="#28a745" border-radius="8px" color="#fff" href="{{ accept_link }}" padding="15px 30px">Accept Request</mj-button>
+          </mj-column>
+          <mj-column>
+            <mj-button align="center" font-size="16px" background-color="#dc3545" border-radius="8px" color="#fff" href="{{ ignore_link }}" padding="15px 30px">Ignore</mj-button>
+          </mj-column>
+        </mj-section>
+
+        <mj-divider border-color="#ccc" border-width="2px"></mj-divider>
+        <mj-text align="center" font-size="14px" padding-left="25px" padding-right="25px" font-family="Arial, Helvetica, sans-serif" color="#555">You can also manage your connection requests through your dashboard.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml> 
