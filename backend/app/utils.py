@@ -24,7 +24,7 @@ class EmailData:
 
 def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
     template_str = (
-        Path(__file__).parent / "email-templates" / "build" / template_name
+        Path(__file__).parent / "email_templates" / "build" / template_name
     ).read_text()
     html_content = Template(template_str).render(context)
     return html_content
@@ -121,3 +121,58 @@ def verify_password_reset_token(token: str) -> str | None:
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None
+
+
+def generate_connection_request_email(
+    email_to: str,
+    requested_name: str,
+    requester_name: str,
+    requester_title: str | None,
+    requester_company: str | None,
+    requester_location: str | None,
+    requester_graduation_year: int | None,
+    request_id: int,
+    message: str | None = None
+) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - New Connection Request from {requester_name}"
+    accept_link = f"{settings.FRONTEND_HOST}/connections/accept/{request_id}"
+    ignore_link = f"{settings.FRONTEND_HOST}/connections/ignore/{request_id}"
+    html_content = render_email_template(
+        template_name="connection_request.html",
+        context={
+            "project_name": settings.PROJECT_NAME,
+            "requested_name": requested_name,
+            "requester_name": requester_name,
+            "requester_title": requester_title or "",
+            "requester_company": requester_company or "",
+            "requester_location": requester_location or "",
+            "requester_graduation_year": requester_graduation_year or "",
+            "accept_link": accept_link,
+            "ignore_link": ignore_link,
+            "message": message,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
+
+
+def generate_connection_acceptance_email(
+    email_to: str,
+    requester_name: str,
+    accepted_name: str,
+    contact_email: str | None,
+    linkedin_url: str | None
+) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Your Connection Request was Accepted"
+    html_content = render_email_template(
+        template_name="connection_acceptance.html",
+        context={
+            "project_name": settings.PROJECT_NAME,
+            "requester_name": requester_name,
+            "accepted_name": accepted_name,
+            "contact_email": contact_email,
+            "linkedin_url": linkedin_url,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
