@@ -130,7 +130,8 @@ class CompaniesPublic(SQLModel):
 # INTERNSHIPS
 class Internship(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    company_name: str = Field(foreign_key="company.name", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", nullable=False)
+    company_name: str = Field(foreign_key="company.name")
     season: datetime = None
     length: int = 10 # Weeks
 
@@ -154,11 +155,31 @@ class InterviewsPublic(SQLModel):
     count: int
 
 # FULL TIME
-class Jobs(SQLModel, table=True):
+class Employment(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    company_name: str = Field(foreign_key="company.name", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", nullable=False)
+    company_name: str = Field(foreign_key="company.name")
+    type: str = Field(regex="^(internship|full time)$")
     start: datetime
-    end: datetime
+    end: Optional[datetime] = None
+
+class EmploymentsCreate(SQLModel):
+    company_name: str = Field(foreign_key="company.name")
+    type: str = Field(regex="^(internship|full time)$")
+    start: datetime
+    end: Optional[datetime] = None
+
+class EmploymentCounts(SQLModel):
+    company_name: str = Field(foreign_key="company.name")
+    employee_count: int
+
+class EmploymentsPublic(SQLModel):
+    data: list[EmploymentCounts]
+    count: int
+
+class EmploymentsList(SQLModel):
+    data: list[Employment]
+    count: int
 
 # CONNECTION REQUESTS
 class Request(SQLModel, table=True):
