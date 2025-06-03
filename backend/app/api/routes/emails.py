@@ -8,7 +8,8 @@ from app.models import (
 )
 from app.api.deps import (
     CurrentUser,
-    SessionDep
+    SessionDep,
+    get_current_active_superuser
 )
 
 router = APIRouter(prefix="/emails", tags=["emails"])
@@ -18,7 +19,7 @@ def add_email(*, session: SessionDep, current_user: CurrentUser, email_in: Email
     """
     Add a new email to the current user.
     """
-    # Check if the email already exists
+    # check if the email already exists
     existing_email = session.get(Email, email_in.email)
     if existing_email:
         raise HTTPException(status_code=400, detail="This email is already in use.")
@@ -76,8 +77,15 @@ def change_preferred_email(*, session: SessionDep, current_user: CurrentUser, em
 
     return new_preferred_email
 
-@router.get("/{user_id}", response_model=EmailsPublic)
+@router.get(
+    "/{user_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=EmailsPublic
+)
 def read_user_emails(*, session: SessionDep, current_user: CurrentUser, user_id: int):
+    """
+    Get all of the emails for a user.
+    """
     count_statement = select(func.count()).select_from(Email).where(Email.user_id == user_id)
     count = session.exec(count_statement).one()
 
