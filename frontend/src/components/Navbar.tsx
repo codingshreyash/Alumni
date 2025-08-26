@@ -7,13 +7,13 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   
-  const isLoggedIn = !!user;
-  const isAdmin = profile?.is_admin;
+  const isLoggedIn = isAuthenticated;
+  const isAdmin = user?.is_superuser;
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate('/');
   };
 
