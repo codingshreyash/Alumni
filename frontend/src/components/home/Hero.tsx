@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Users, Briefcase, Network, Sparkles } from 'lucide-react';
+import { ArrowRight, Users, Briefcase, Network, Sparkles, ChevronDown } from 'lucide-react';
 
 const Hero: React.FC = () => {
   return (
@@ -53,18 +53,16 @@ const Hero: React.FC = () => {
           </Link>
         </div>
         
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto animate-fade-in animation-delay-300">
-          <StatCard icon={<Users />} value="500+" label="Active Alumni" />
-          <StatCard icon={<Briefcase />} value="150+" label="Companies" />
-          <StatCard icon={<Network />} value="1000+" label="Connections" />
-        </div>
       </div>
       
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 rounded-full border-2 border-pittGold/50 flex justify-center">
-          <div className="w-1 h-3 bg-pittGold rounded-full mt-2"></div>
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer group">
+        <div className="flex flex-col items-center">
+          <ChevronDown className="h-6 w-6 text-pittGold/80 animate-bounce group-hover:text-pittGold transition-colors" />
+          <ChevronDown className="h-4 w-4 text-pittGold/50 -mt-3 animate-bounce animation-delay-100 group-hover:text-pittGold/70 transition-colors" />
+        </div>
+        <div className="mt-2 text-xs text-pittGold/60 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+          Scroll down
         </div>
       </div>
     </section>

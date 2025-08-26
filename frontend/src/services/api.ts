@@ -116,6 +116,43 @@ export const userAPI = {
   },
 };
 
+// Connection request methods
+export const connectionAPI = {
+  async createConnectionRequest(requesterId: number, requestedId: number, message: string) {
+    const response = await api.post('/connections/', {
+      requester_id: requesterId,
+      requested_id: requestedId,
+      message
+    });
+    return response.data;
+  },
+
+  async getAcceptedRequests(userId: number) {
+    const response = await api.get(`/connections/${userId}/accepted_requests`);
+    return response.data;
+  },
+
+  async getRequestsMade(userId: number) {
+    const response = await api.get(`/connections/${userId}/accepted_requested`);
+    return response.data;
+  },
+
+  async acceptConnectionRequest(requestId: number) {
+    const response = await api.post(`/connections/accept/${requestId}`);
+    return response.data;
+  },
+
+  async declineConnectionRequest(requestId: number) {
+    const response = await api.post(`/connections/ignore/${requestId}`);
+    return response.data;
+  },
+
+  async deleteConnectionRequest(connectionId: number) {
+    const response = await api.delete(`/connections/${connectionId}`);
+    return response.data;
+  }
+};
+
 // Company methods
 export const companyAPI = {
   async getCompanies() {

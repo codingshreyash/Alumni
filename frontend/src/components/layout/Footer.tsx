@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   GraduationCap, 
   Mail, 
-  Github, 
+  Instagram, 
   Linkedin, 
   Twitter,
   Heart,
@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-pittDarkNavy text-white mt-auto">
+    <footer className="bg-gradient-pitt text-white mt-auto">
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -34,24 +34,11 @@ const Footer: React.FC = () => {
             
             {/* Social Links */}
             <div className="flex gap-4">
-              <SocialLink href="https://github.com/pittcsc" icon={<Github />} label="GitHub" />
-              <SocialLink href="https://linkedin.com/company/pittcsc" icon={<Linkedin />} label="LinkedIn" />
-              <SocialLink href="https://twitter.com/pittcsc" icon={<Twitter />} label="Twitter" />
-              <SocialLink href="mailto:alumni@pittcsc.org" icon={<Mail />} label="Email" />
+              <SocialLink href="https://www.instagram.com/csc.at.pitt/" icon={<Instagram />} label="Instagram" />
+              <SocialLink href="https://www.linkedin.com/company/cscatpitt/" icon={<Linkedin />} label="LinkedIn" />
+              <SocialLink href="https://x.com/CSC_at_Pitt" icon={<Twitter />} label="Twitter" />
+              <SocialLink href="mailto:pittcsc@gmail.com" icon={<Mail />} label="Email" />
             </div>
-          </div>
-          
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-pittGold mb-4">
-              Quick Links
-            </h4>
-            <ul className="space-y-2">
-              <FooterLink to="/alumni">Alumni Directory</FooterLink>
-              <FooterLink to="/events">Events</FooterLink>
-              <FooterLink to="/company-processes">Interview Prep</FooterLink>
-              <FooterLink to="/connections">My Connections</FooterLink>
-            </ul>
           </div>
           
           {/* Resources */}
@@ -60,10 +47,7 @@ const Footer: React.FC = () => {
               Resources
             </h4>
             <ul className="space-y-2">
-              <FooterLink to="/about">About Us</FooterLink>
-              <FooterLink to="/terms">Terms of Service</FooterLink>
-              <FooterLink to="/privacy">Privacy Policy</FooterLink>
-              <FooterLink to="#" external>
+              <FooterLink to="https://pittcsc.org/" external>
                 Pitt CSC Website
                 <ExternalLink className="inline-block w-3 h-3 ml-1" />
               </FooterLink>
@@ -71,25 +55,6 @@ const Footer: React.FC = () => {
           </div>
         </div>
         
-        {/* Newsletter Signup */}
-        <div className="mt-12 p-6 bg-white/5 rounded-lg backdrop-blur-sm">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Stay Connected</h3>
-              <p className="text-sm text-gray-300">Get updates on alumni events, career opportunities, and network news</p>
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pittGold flex-grow md:w-64"
-              />
-              <button className="px-6 py-2 bg-gradient-gold text-pittDarkNavy font-semibold rounded-lg hover:shadow-glow-gold transition-all">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
       
       {/* Bottom Bar */}
