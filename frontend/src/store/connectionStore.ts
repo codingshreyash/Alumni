@@ -1,68 +1,93 @@
 import { create } from 'zustand';
-import { 
-  getConnectionRequests, 
-  createConnectionRequest as createRequest, 
-  updateConnectionStatus as updateStatus 
-} from '../lib/supabaseClient';
+import { connectionAPI } from '../services/api';
 
 interface ConnectionState {
-  connections: any[];
+  acceptedRequests: any[];
+  requestsMade: any[];
   isLoading: boolean;
   error: string | null;
-  fetchConnections: (userId: string) => Promise<void>;
-  createConnectionRequest: (requesterId: string, alumniId: string, message: string) => Promise<void>;
-  updateConnectionStatus: (connectionId: string, status: 'accepted' | 'declined') => Promise<void>;
+  fetchAcceptedRequests: (userId: number) => Promise<void>;
+  fetchRequestsMade: (userId: number) => Promise<void>;
+  createConnectionRequest: (requesterId: number, requestedId: number, message: string) => Promise<void>;
+  acceptConnectionRequest: (requestId: number) => Promise<void>;
+  declineConnectionRequest: (requestId: number) => Promise<void>;
   clearError: () => void;
 }
 
-export const useConnectionStore = create<ConnectionState>((set) => ({
-  connections: [],
+export const useConnectionStore = create<ConnectionState>((set, get) => ({
+  acceptedRequests: [],
+  requestsMade: [],
   isLoading: false,
   error: null,
   
-  fetchConnections: async (userId: string) => {
+  fetchAcceptedRequests: async (userId: number) => {
     try {
       set({ isLoading: true, error: null });
       
-      const connections = await getConnectionRequests(userId);
-      set({ connections });
+      const acceptedRequests = await connectionAPI.getAcceptedRequests(userId);
+      set({ acceptedRequests });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.response?.data?.detail || error.message || 'Failed to fetch accepted requests' });
     } finally {
       set({ isLoading: false });
     }
   },
   
-  createConnectionRequest: async (requesterId: string, alumniId: string, message: string) => {
+  fetchRequestsMade: async (userId: number) => {
     try {
       set({ isLoading: true, error: null });
       
-      await createRequest(requesterId, alumniId, message);
-      
-      // Refresh connections
-      const connections = await getConnectionRequests(requesterId);
-      set({ connections });
+      const requestsMade = await connectionAPI.getRequestsMade(userId);
+      set({ requestsMade });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.response?.data?.detail || error.message || 'Failed to fetch requests made' });
     } finally {
       set({ isLoading: false });
     }
   },
   
-  updateConnectionStatus: async (connectionId: string, status: 'accepted' | 'declined') => {
+  createConnectionRequest: async (requesterId: number, requestedId: number, message: string) => {
     try {
       set({ isLoading: true, error: null });
       
-      await updateStatus(connectionId, status);
+      await connectionAPI.createConnectionRequest(requesterId, requestedId, message);
       
-      // Update the connection in the state
-      set((state) => ({
-        connections: state.connections.map((conn) =>
-          conn.id === connectionId ? { ...conn, status } : conn
-        ),
-      }));
+      // Refresh requests made
+      await get().fetchRequestsMade(requesterId);
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.response?.data?.detail || error.message || 'Failed to create connection request' });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  acceptConnectionRequest: async (requestId: number) => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      await connectionAPI.acceptConnectionRequest(requestId);
+      
+      // Note: We'd need userId to refresh, but we'll handle this in the component
+      // by passing the userId and calling both fetch functions
+    } catch (error: any) {
+      set({ error: error.response?.data?.detail || error.message || 'Failed to accept connection request' });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  declineConnectionRequest: async (requestId: number) => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      await connectionAPI.declineConnectionRequest(requestId);
+      
+      // Note: We'd need userId to refresh, but we'll handle this in the component
+    } catch (error: any) {
+      set({ error: error.response?.data?.detail || error.message || 'Failed to decline connection request' });
+      throw error;
     } finally {
       set({ isLoading: false });
     }

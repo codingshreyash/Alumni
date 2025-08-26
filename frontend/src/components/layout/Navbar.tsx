@@ -6,7 +6,6 @@ import {
   X, 
   Briefcase, 
   Users, 
-  Calendar,
   User,
   LogOut,
   Home,
@@ -44,9 +43,7 @@ const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-      isScrolled ? 'bg-pittDarkNavy/95 backdrop-blur-md shadow-large' : 'bg-gradient-pitt shadow-medium'
-    }`}>
+    <nav className="fixed top-0 z-50 w-full transition-all duration-300 bg-gradient-pitt shadow-medium">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo Section */}
@@ -72,9 +69,6 @@ const Navbar: React.FC = () => {
                 </NavLink>
                 <NavLink to="/company-processes" icon={<Briefcase className="h-4 w-4" />} active={isActive('/company-processes')}>
                   Interview Prep
-                </NavLink>
-                <NavLink to="/events" icon={<Calendar className="h-4 w-4" />} active={isActive('/events')}>
-                  Events
                 </NavLink>
                 <NavLink to="/connections" active={isActive('/connections')}>
                   Connections
@@ -171,9 +165,6 @@ const Navbar: React.FC = () => {
                 </MobileNavLink>
                 <MobileNavLink to="/company-processes" icon={<Briefcase className="h-4 w-4" />} onClick={() => setIsMenuOpen(false)}>
                   Interview Prep
-                </MobileNavLink>
-                <MobileNavLink to="/events" icon={<Calendar className="h-4 w-4" />} onClick={() => setIsMenuOpen(false)}>
-                  Events
                 </MobileNavLink>
                 <MobileNavLink to="/connections" onClick={() => setIsMenuOpen(false)}>
                   My Connections

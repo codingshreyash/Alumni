@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useConnectionStore } from '../store/connectionStore';
 import { Mail, CheckCircle, XCircle, Clock } from 'lucide-react';
-import Button from '../components/Button';
-import Card, { CardHeader, CardBody, CardFooter } from '../components/Card';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
 const ConnectionsPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { connections, fetchConnections, updateConnectionStatus, isLoading, error } = useConnectionStore();
+  const { acceptedRequests, requestsMade, fetchAcceptedRequests, fetchRequestsMade, acceptConnectionRequest, declineConnectionRequest, isLoading, error } = useConnectionStore();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<'received' | 'sent' | 'all'>('all');
@@ -19,21 +19,36 @@ const ConnectionsPage: React.FC = () => {
       return;
     }
     
-    fetchConnections(user.id);
-  }, [user, navigate, fetchConnections]);
+    // Fetch both accepted requests and requests made
+    fetchAcceptedRequests(user.id);
+    fetchRequestsMade(user.id);
+  }, [user, navigate, fetchAcceptedRequests, fetchRequestsMade]);
   
-  const handleAcceptRequest = async (connectionId: string) => {
-    await updateConnectionStatus(connectionId, 'accepted');
+  const handleAcceptRequest = async (requestId: number) => {
+    await acceptConnectionRequest(requestId);
+    // Refresh both lists after accepting
+    if (user) {
+      fetchAcceptedRequests(user.id);
+      fetchRequestsMade(user.id);
+    }
   };
   
-  const handleDeclineRequest = async (connectionId: string) => {
-    await updateConnectionStatus(connectionId, 'declined');
+  const handleDeclineRequest = async (requestId: number) => {
+    await declineConnectionRequest(requestId);
+    // Refresh both lists after declining
+    if (user) {
+      fetchAcceptedRequests(user.id);
+      fetchRequestsMade(user.id);
+    }
   };
   
-  const filteredConnections = connections.filter((connection) => {
+  // Combine accepted requests and requests made for display
+  const allItems = [...acceptedRequests, ...requestsMade];
+  
+  const filteredConnections = allItems.filter((item) => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'received') return connection.alumni_id === user?.id;
-    if (activeTab === 'sent') return connection.requester_id === user?.id;
+    if (activeTab === 'received') return item.requested_id === user?.id;
+    if (activeTab === 'sent') return item.requester_id === user?.id;
     return true;
   });
   
@@ -117,7 +132,12 @@ const ConnectionsPage: React.FC = () => {
             <p className="text-gray-600 mb-4">{error}</p>
             <Button
               variant="primary"
-              onClick={() => fetchConnections(user!.id)}
+              onClick={() => {
+                if (user) {
+                  fetchAcceptedRequests(user.id);
+                  fetchRequestsMade(user.id);
+                }
+              }}
             >
               Try Again
             </Button>
@@ -143,23 +163,24 @@ const ConnectionsPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredConnections.map((connection) => {
-              const isIncoming = connection.alumni_id === user?.id;
-              const otherPerson = isIncoming ? connection.requester : connection.alumni;
+            {filteredConnections.map((item) => {
+              const isIncoming = item.requested_id === user?.id;
+              const isConnection = 'email' in item; // Connections have email, requests don't
+              const status = isConnection ? 'accepted' : 'pending';
               
               return (
-                <Card key={connection.id} className="h-full flex flex-col">
-                  <CardHeader className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-pittDeepNavy">
-                      {isIncoming ? 'Request from' : 'Request to'} {otherPerson.full_name}
+                <Card key={item.id} className="h-full flex flex-col p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-pittDarkNavy">
+                      {isIncoming ? 'Request from' : 'Request to'} {item.full_name || 'User'}
                     </h3>
-                    {getStatusBadge(connection.status)}
-                  </CardHeader>
+                    {getStatusBadge(status)}
+                  </div>
                   
-                  <CardBody className="flex-grow">
+                  <div className="flex-grow">
                     <div className="mb-4">
                       <p className="text-sm text-gray-500">
-                        {new Date(connection.created_at).toLocaleDateString('en-US', {
+                        {new Date(item.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -167,36 +188,36 @@ const ConnectionsPage: React.FC = () => {
                       </p>
                     </div>
                     
-                    {connection.message && (
+                    {item.message && (
                       <div className="bg-gray-50 p-3 rounded-md mb-4">
-                        <p className="text-gray-700">{connection.message}</p>
+                        <p className="text-gray-700">{item.message}</p>
                       </div>
                     )}
                     
-                    {connection.status === 'accepted' && (
+                    {isConnection && item.email && (
                       <div className="flex items-center text-green-600 mb-4">
                         <Mail className="h-4 w-4 mr-2" />
-                        <a href={`mailto:${otherPerson.email}`} className="hover:underline">
-                          {otherPerson.email}
+                        <a href={`mailto:${item.email}`} className="hover:underline">
+                          {item.email}
                         </a>
                       </div>
                     )}
-                  </CardBody>
+                  </div>
                   
-                  <CardFooter className="bg-gray-50">
-                    {isIncoming && connection.status === 'pending' ? (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    {isIncoming && !isConnection ? (
                       <div className="flex justify-between w-full">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDeclineRequest(connection.id)}
+                          onClick={() => handleDeclineRequest(item.id)}
                         >
                           Decline
                         </Button>
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => handleAcceptRequest(connection.id)}
+                          onClick={() => handleAcceptRequest(item.id)}
                         >
                           Accept
                         </Button>
@@ -205,13 +226,13 @@ const ConnectionsPage: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/alumni/${otherPerson.id}`)}
+                        onClick={() => navigate(`/alumni/${item.requester_id || item.requested_id}`)}
                         fullWidth
                       >
                         View Profile
                       </Button>
                     )}
-                  </CardFooter>
+                  </div>
                 </Card>
               );
             })}

@@ -122,49 +122,6 @@ const HomePage: React.FC = () => {
         </div>
       </section>
       
-      {/* Benefits Section */}
-      <section className="py-20 bg-gradient-pitt text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl font-display font-bold mb-6">
-                Accelerate Your Career with Alumni Support
-              </h2>
-              <p className="text-lg mb-8 text-gray-200">
-                Whether you're a recent graduate or an experienced professional, 
-                our network provides the connections and resources you need to succeed.
-              </p>
-              
-              <div className="space-y-4">
-                <BenefitItem text="Get referrals to top tech companies" />
-                <BenefitItem text="Learn from interview experiences" />
-                <BenefitItem text="Find mentors in your field of interest" />
-                <BenefitItem text="Discover job opportunities before they're public" />
-                <BenefitItem text="Build lasting professional relationships" />
-              </div>
-              
-              <div className="mt-8">
-                <Link to="/alumni">
-                  <Button variant="secondary" size="lg" rightIcon={<ArrowRight />}>
-                    Explore Alumni Profiles
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <StatCard value="95%" label="Job Placement Rate" />
-                <StatCard value="$125k" label="Average Starting Salary" />
-              </div>
-              <div className="space-y-4 mt-8">
-                <StatCard value="500+" label="Active Alumni" />
-                <StatCard value="150+" label="Partner Companies" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
       
       {/* CTA Section */}
       <section className="py-20 bg-white">
@@ -233,18 +190,5 @@ const StepCard: React.FC<{
   </div>
 );
 
-const BenefitItem: React.FC<{ text: string }> = ({ text }) => (
-  <div className="flex items-start">
-    <CheckCircle className="h-6 w-6 text-pittGold mr-3 flex-shrink-0 mt-0.5" />
-    <span className="text-gray-100">{text}</span>
-  </div>
-);
-
-const StatCard: React.FC<{ value: string; label: string }> = ({ value, label }) => (
-  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center">
-    <div className="text-3xl font-bold text-pittGold mb-2">{value}</div>
-    <div className="text-sm text-gray-200">{label}</div>
-  </div>
-);
 
 export default HomePage;
