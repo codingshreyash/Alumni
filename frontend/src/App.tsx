@@ -20,22 +20,22 @@ import MockCredentialsPage from './pages/MockCredentialsPage';
 import CompanyProcessesPage from './pages/CompanyProcessesPage';
 
 // Components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 
 function App() {
-  const { checkSession } = useAuthStore();
+  const { checkAuth } = useAuthStore();
   
   useEffect(() => {
     // Check for existing session on app load
-    checkSession();
-  }, [checkSession]);
+    checkAuth();
+  }, [checkAuth]);
   
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-gray-50">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow pt-16">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />

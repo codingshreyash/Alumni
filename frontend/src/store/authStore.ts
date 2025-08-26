@@ -1,125 +1,142 @@
 import { create } from 'zustand';
-import { User } from '@supabase/supabase-js';
-import { 
-  supabase, 
-  signIn as supabaseSignIn, 
-  signUp as supabaseSignUp, 
-  signOut as supabaseSignOut,
-  getCurrentUser,
-  getProfile as fetchProfile
-} from '../lib/supabaseClient';
+import { authAPI } from '../services/api';
+import { User, AuthResponse } from '../types';
 
 interface AuthState {
   user: User | null;
-  profile: any | null;
+  accessToken: string | null;
   isLoading: boolean;
   error: string | null;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  getProfile: () => Promise<void>;
+  isAuthenticated: boolean;
+  
+  // Actions
+  login: (username: string, password: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string) => Promise<void>;
+  logout: () => Promise<void>;
+  fetchCurrentUser: () => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
   clearError: () => void;
-  checkSession: () => Promise<void>;
+  checkAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  profile: null,
+  accessToken: localStorage.getItem('access_token'),
   isLoading: false,
   error: null,
+  isAuthenticated: false,
   
-  signUp: async (email: string, password: string, fullName: string) => {
+  login: async (username: string, password: string) => {
     try {
       set({ isLoading: true, error: null });
       
-      const user = await supabaseSignUp(email, password, fullName);
-      set({ user });
+      const response: AuthResponse = await authAPI.login(username, password);
+      set({ accessToken: response.access_token });
       
-      // Show success message for email verification if needed
-      // In this case, we're not requiring email verification
+      // Fetch user details after login
+      await get().fetchCurrentUser();
+      
+      set({ isAuthenticated: true });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ 
+        error: error.response?.data?.detail || 'Login failed',
+        isAuthenticated: false 
+      });
+      throw error;
     } finally {
       set({ isLoading: false });
     }
   },
   
-  signIn: async (email: string, password: string) => {
+  register: async (email: string, password: string, fullName: string) => {
     try {
       set({ isLoading: true, error: null });
       
-      const user = await supabaseSignIn(email, password);
-      set({ user });
+      await authAPI.register(email, password, fullName);
       
-      // Get profile
-      if (user) {
-        await get().getProfile();
+      // Auto-login after registration
+      await get().login(email, password);
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.detail || 'Registration failed' 
+      });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  logout: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      await authAPI.logout();
+      
+      set({ 
+        user: null, 
+        accessToken: null,
+        isAuthenticated: false 
+      });
+    } catch (error: any) {
+      set({ error: error.response?.data?.detail || 'Logout failed' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  fetchCurrentUser: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      const user = await authAPI.getCurrentUser();
+      set({ user, isAuthenticated: true });
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // Token invalid or expired
+        set({ 
+          user: null, 
+          accessToken: null,
+          isAuthenticated: false 
+        });
+        localStorage.removeItem('access_token');
+      } else {
+        set({ error: error.response?.data?.detail || 'Failed to fetch user' });
       }
-    } catch (error: any) {
-      set({ error: error.message });
     } finally {
       set({ isLoading: false });
     }
   },
   
-  signOut: async () => {
+  updateProfile: async (data: Partial<User>) => {
     try {
       set({ isLoading: true, error: null });
       
-      await supabaseSignOut();
-      set({ user: null, profile: null });
+      const updatedUser = await authAPI.updateProfile(data);
+      set({ user: updatedUser });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.response?.data?.detail || 'Failed to update profile' });
+      throw error;
     } finally {
       set({ isLoading: false });
     }
   },
   
-  getProfile: async () => {
+  clearError: () => {
+    set({ error: null });
+  },
+  
+  checkAuth: async () => {
+    const token = localStorage.getItem('access_token');
+    
+    if (!token) {
+      set({ isAuthenticated: false, user: null });
+      return;
+    }
+    
     try {
-      const { user } = get();
-      
-      if (!user) return;
-      
-      set({ isLoading: true, error: null });
-      
-      const profile = await fetchProfile(user.id);
-      set({ profile });
-    } catch (error: any) {
-      set({ error: error.message });
-    } finally {
-      set({ isLoading: false });
+      await get().fetchCurrentUser();
+    } catch {
+      set({ isAuthenticated: false, user: null });
     }
   },
-  
-  checkSession: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      
-      // Check if we have a session
-      const user = await getCurrentUser();
-      
-      // Only update user if we actually got one back
-      if (user) {
-        set({ user });
-        await get().getProfile();
-      }
-    } catch (error: any) {
-      // Don't set error for session checks
-      console.error('Session check error:', error);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-  
-  clearError: () => set({ error: null }),
 }));
-
-// Set up auth state listener
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' && session?.user) {
-    useAuthStore.getState().checkSession();
-  } else if (event === 'SIGNED_OUT') {
-    useAuthStore.setState({ user: null, profile: null });
-  }
-});
