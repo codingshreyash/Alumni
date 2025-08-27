@@ -1,201 +1,169 @@
 import { create } from 'zustand';
-import { getAlumni } from '../lib/supabaseClient';
+import { userAPI } from '../services/api';
+import { User, AlumniFilters, PaginatedResponse } from '../types';
 
 interface AlumniState {
-  alumni: any[];
-  filteredAlumni: any[];
-  filters: {
-    location: string | null;
-    majors: string[] | null;
-    internships: string[] | null;
-    graduationYear: number | null;
-    openToCoffeeChats: boolean | null;
-    openToMentorship: boolean | null;
-    availableForReferrals: boolean | null;
-    searchResults?: any[] | null;
-  };
+  alumni: User[];
+  filteredAlumni: User[];
+  selectedAlumnus: User | null;
+  filters: AlumniFilters;
   isLoading: boolean;
   error: string | null;
-  fetchAlumni: () => Promise<void>;
-  applyFilters: (filters: any) => void;
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  
+  // Actions
+  fetchAlumni: (page?: number) => Promise<void>;
+  fetchAlumnusById: (id: number) => Promise<void>;
+  applyFilters: (filters: AlumniFilters) => void;
   clearFilters: () => void;
+  searchAlumni: (searchTerm: string) => void;
+  setSelectedAlumnus: (alumnus: User | null) => void;
+  setPageSize: (size: number) => void;
+  setCurrentPage: (page: number) => void;
   clearError: () => void;
 }
 
 export const useAlumniStore = create<AlumniState>((set, get) => ({
   alumni: [],
   filteredAlumni: [],
-  filters: {
-    location: null,
-    majors: null,
-    internships: null,
-    graduationYear: null,
-    openToCoffeeChats: null,
-    openToMentorship: null,
-    availableForReferrals: null,
-  },
+  selectedAlumnus: null,
+  filters: {},
   isLoading: false,
   error: null,
+  totalCount: 0,
+  currentPage: 1,
+  pageSize: 20,
   
-  fetchAlumni: async () => {
+  fetchAlumni: async (page = 1) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ isLoading: true, error: null, currentPage: page });
       
-      // For development/demo, we'll use the mock data if Supabase fetch fails
-      try {
-        const alumni = await getAlumni();
-        set({ alumni, filteredAlumni: alumni });
-      } catch (error) {
-        console.warn('Failed to fetch alumni from Supabase, using mock data instead');
-        
-        // Use mock data as fallback
-        const mockAlumni = [
-          {
-            id: '1',
-            full_name: 'Emily Chen',
-            location: 'San Francisco, CA',
-            majors: ['Computer Science', 'Mathematics'],
-            graduation_year: 2022,
-            internships: ['Google', 'Microsoft', 'Stripe'],
-            interviews_passed: ['Google', 'Microsoft', 'Stripe', 'Airbnb', 'Uber'],
-            open_to_coffee_chats: true,
-            open_to_mentorship: true,
-            available_for_referrals: true,
-            profile_image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80',
-            current_company: 'Google',
-            current_role: 'Software Engineer',
-            linkedin_url: 'https://linkedin.com/in/example',
-            personal_website: 'https://emilychen.dev',
-            additional_notes: 'Happy to help with interview prep and resume reviews. Specialized in distributed systems and machine learning applications.'
-          },
-          {
-            id: '2',
-            full_name: 'Michael Rodriguez',
-            location: 'New York, NY',
-            majors: ['Computer Science'],
-            graduation_year: 2021,
-            internships: ['Amazon', 'Facebook', 'Bloomberg'],
-            interviews_passed: ['Amazon', 'Facebook', 'Bloomberg', 'Goldman Sachs', 'JPMorgan'],
-            open_to_coffee_chats: true,
-            open_to_mentorship: false,
-            available_for_referrals: true,
-            profile_image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80',
-            current_company: 'Amazon',
-            current_role: 'Senior Software Development Engineer',
-            linkedin_url: 'https://linkedin.com/in/example',
-            personal_website: null,
-            additional_notes: 'Experienced in backend development and cloud infrastructure. Can provide guidance on AWS certifications and career growth in cloud computing.'
-          },
-          // Add more mock alumni as needed
-          {
-            id: '3',
-            full_name: 'Aisha Johnson',
-            location: 'Pittsburgh, PA',
-            majors: ['Information Science', 'Human-Computer Interaction'],
-            graduation_year: 2020,
-            internships: ['Apple', 'Twitter', 'Duolingo'],
-            interviews_passed: ['Apple', 'Twitter', 'Duolingo', 'Spotify', 'Pinterest'],
-            open_to_coffee_chats: false,
-            open_to_mentorship: true,
-            available_for_referrals: false,
-            profile_image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80',
-            current_company: 'Apple',
-            current_role: 'UX Engineer',
-            linkedin_url: 'https://linkedin.com/in/example',
-            personal_website: null,
-            additional_notes: 'Interested in connecting with students focused on UX/UI design and frontend development. Can provide portfolio reviews and interview preparation for design roles.'
-          }
-        ];
-        
-        set({ alumni: mockAlumni, filteredAlumni: mockAlumni });
+      const skip = (page - 1) * get().pageSize;
+      const response: PaginatedResponse<User> = await userAPI.getUsers(skip, get().pageSize);
+      
+      // Filter to show only visible profiles
+      const visibleAlumni = response.data.filter(user => user.profile_visible);
+      
+      set({ 
+        alumni: visibleAlumni,
+        filteredAlumni: visibleAlumni,
+        totalCount: response.count
+      });
+      
+      // Apply any existing filters
+      const currentFilters = get().filters;
+      if (Object.keys(currentFilters).length > 0) {
+        get().applyFilters(currentFilters);
       }
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.response?.data?.detail || 'Failed to fetch alumni' });
     } finally {
       set({ isLoading: false });
     }
   },
   
-  applyFilters: (filters) => {
-    set({ filters });
-    
+  fetchAlumnusById: async (id: number) => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      const alumnus = await userAPI.getUserById(id);
+      set({ selectedAlumnus: alumnus });
+    } catch (error: any) {
+      set({ error: error.response?.data?.detail || 'Failed to fetch alumnus details' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  applyFilters: (filters: AlumniFilters) => {
     const { alumni } = get();
     
-    // Start with search results if provided, otherwise use all alumni
-    let filtered = filters.searchResults || [...alumni];
+    let filtered = [...alumni];
     
-    const {
-      location,
-      majors,
-      internships,
-      graduationYear,
-      openToCoffeeChats,
-      openToMentorship,
-      availableForReferrals,
-    } = filters;
-    
-    if (location) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.location && alumnus.location.toLowerCase().includes(location.toLowerCase())
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(alumnus => 
+        alumnus.full_name.toLowerCase().includes(searchLower) ||
+        alumnus.email.toLowerCase().includes(searchLower) ||
+        alumnus.current_company?.toLowerCase().includes(searchLower) ||
+        alumnus.current_role?.toLowerCase().includes(searchLower) ||
+        alumnus.bio?.toLowerCase().includes(searchLower)
       );
     }
     
-    if (majors && majors.length > 0) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.majors && majors.some((major: string) => 
-          alumnus.majors.includes(major)
-        )
+    // Apply location filter
+    if (filters.location) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.location?.toLowerCase().includes(filters.location!.toLowerCase())
       );
     }
     
-    if (internships && internships.length > 0) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.internships && internships.some((internship: string) => 
-          alumnus.internships.includes(internship)
-        )
+    // Apply graduation year filter
+    if (filters.graduation_year) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.graduation_year === filters.graduation_year
       );
     }
     
-    if (graduationYear) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.graduation_year === graduationYear
+    // Apply company filter
+    if (filters.company) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.current_company?.toLowerCase().includes(filters.company!.toLowerCase())
       );
     }
     
-    if (openToCoffeeChats !== null) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.open_to_coffee_chats === openToCoffeeChats
+    // Apply availability filters
+    if (filters.open_to_coffee_chats !== undefined) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.open_to_coffee_chats === filters.open_to_coffee_chats
       );
     }
     
-    if (openToMentorship !== null) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.open_to_mentorship === openToMentorship
+    if (filters.open_to_mentorship !== undefined) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.open_to_mentorship === filters.open_to_mentorship
       );
     }
     
-    if (availableForReferrals !== null) {
-      filtered = filtered.filter((alumnus) => 
-        alumnus.available_for_referrals === availableForReferrals
+    if (filters.available_for_referrals !== undefined) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.available_for_referrals === filters.available_for_referrals
       );
     }
     
-    set({ filteredAlumni: filtered });
+    if (filters.is_alumni !== undefined) {
+      filtered = filtered.filter(alumnus => 
+        alumnus.is_alumni === filters.is_alumni
+      );
+    }
+    
+    set({ filteredAlumni: filtered, filters });
   },
   
   clearFilters: () => {
-    set((state) => ({
-      filters: {
-        location: null,
-        majors: null,
-        internships: null,
-        graduationYear: null,
-        openToCoffeeChats: null,
-        openToMentorship: null,
-        availableForReferrals: null,
-      },
-      filteredAlumni: state.alumni,
-    }));
+    const { alumni } = get();
+    set({ filteredAlumni: alumni, filters: {} });
+  },
+  
+  searchAlumni: (searchTerm: string) => {
+    const currentFilters = get().filters;
+    get().applyFilters({ ...currentFilters, search: searchTerm });
+  },
+  
+  setSelectedAlumnus: (alumnus: User | null) => {
+    set({ selectedAlumnus: alumnus });
+  },
+  
+  setPageSize: (size: number) => {
+    set({ pageSize: size });
+    get().fetchAlumni(1); // Reset to first page when changing page size
+  },
+  
+  setCurrentPage: (page: number) => {
+    get().fetchAlumni(page);
   },
   
   clearError: () => set({ error: null }),
